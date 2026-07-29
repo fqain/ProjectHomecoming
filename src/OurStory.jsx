@@ -275,7 +275,7 @@ export default function OurStory() {
     if (page.kind === "cover") {
       const isFront = idx === 0;
       return (
-        <div className="os-lace" style={{ position: "relative", height: "100%", background: isFront
+        <div className="os-lace" style={{ position: "relative", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", height: "100%", background: isFront
           ? `linear-gradient(135deg, ${C.leatherLight} 0%, ${C.leather} 55%, ${C.leatherDark} 100%)`
           : `linear-gradient(135deg, ${C.teal} 0%, #245951 55%, #163a35 100%)` }}>
           {/* gold corner brackets, like the reference photo */}
@@ -284,7 +284,19 @@ export default function OurStory() {
           ))}
           {renderCoverOrnaments()}
 
-          <div style={{ position: "relative", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", height: "100%", textAlign: "center", padding: "2.4rem 1.8rem" }}>
+          <div style={{ position: "relative", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", width: "100%", textAlign: "center", padding: "2.4rem 1.8rem" }}>
+            <label style={{ ...coverPhotoSlotStyle, marginBottom: "1rem" }}>
+              {page.photo ? (
+                <img src={page.photo} alt="" style={{ width: "100%", height: "100%", objectFit: "cover", borderRadius: "8px" }} />
+              ) : (
+                <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "0.3rem", color: "rgba(231,214,169,0.75)" }}>
+                  <ImagePlus size={20} />
+                  <span style={{ fontFamily: "'EB Garamond', serif", fontSize: "0.72rem" }}>add photo</span>
+                </div>
+              )}
+              <input type="file" accept="image/*" style={{ display: "none" }} onChange={(e) => handleCoverPhotoUpload(idx, e.target.files[0])} />
+            </label>
+
             {editMode ? (
               <textarea aria-label="Cover title" className="os-edit-input os-cover-title" value={page.title} onChange={(e) => updatePage(idx, "title", e.target.value)} rows={2}
                 style={{ ...coverTitleStyle, background: "transparent", border: "none", borderBottom: "1px dashed rgba(201,162,75,0.6)", textAlign: "center", width: "100%", resize: "none" }} />
@@ -297,18 +309,6 @@ export default function OurStory() {
             ) : (
               <p className="os-cover-body" style={coverBodyStyle}>{page.body}</p>
             )}
-
-            <label style={coverPhotoSlotStyle}>
-              {page.photo ? (
-                <img src={page.photo} alt="" style={{ width: "100%", height: "100%", objectFit: "cover", borderRadius: "8px" }} />
-              ) : (
-                <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "0.3rem", color: "rgba(231,214,169,0.75)" }}>
-                  <ImagePlus size={20} />
-                  <span style={{ fontFamily: "'EB Garamond', serif", fontSize: "0.72rem" }}>add photo</span>
-                </div>
-              )}
-              <input type="file" accept="image/*" style={{ display: "none" }} onChange={(e) => handleCoverPhotoUpload(idx, e.target.files[0])} />
-            </label>
 
             {page.stampWord && (
               <div className="os-stamp-font" style={exitStampStyle}>
@@ -509,11 +509,7 @@ export default function OurStory() {
           style={{ color: "#9aa3c9", fontSize: "0.72rem", marginTop: "0.4rem", textAlign: "center", background: "transparent", border: "none", borderBottom: "1px dashed rgba(201,162,75,0.4)" }} />
       )}
 
-      <button className="os-navbtn os-edit-btn" onClick={() => setEditMode((v) => !v)} style={editBtnStyle}>
-        {editMode ? <Check size={14} /> : <Pencil size={14} />}
-        {editMode ? "Done editing" : "Edit story"}
-      </button>
-
+<br></br>
       {/* ---------------- Previous trips, stamp strip ---------------- */}
       <div style={{ width: "100%", maxWidth: "30rem", marginBottom: "2rem" }}>
         <p className="os-stamp-font" style={{ ...eyebrowStyle, color: C.gold, textAlign: "center" }}>PASSPORT · PRIOR STAMPS</p>
@@ -588,7 +584,15 @@ export default function OurStory() {
           </div>
         </>
       )}
+
+<br></br><br></br><br></br>
+      <button className="os-navbtn os-edit-btn" onClick={() => setEditMode((v) => !v)} style={editBtnStyle}>
+        {editMode ? <Check size={14} /> : <Pencil size={14} />}
+        {editMode ? "Done editing" : "Edit story"}
+      </button>
+
     </div>
+    
   );
 }
 
@@ -696,8 +700,8 @@ const navBtnStyle = {
 const coverPhotoSlotStyle = {
   position: "relative", zIndex: 1,
   display: "flex", alignItems: "center", justifyContent: "center",
-  width: "7.2rem", height: "7.2rem", margin: "1rem auto 0.6rem",
-  borderRadius: "10px", border: "1.5px dashed rgba(231,214,169,0.55)",
+  width: "12rem", height: "12rem", margin: "1rem auto 1rem",
+  borderRadius: "12px", border: "1.5px dashed rgba(231,214,169,0.55)",
   background: "rgba(0,0,0,0.15)", cursor: "pointer", overflow: "hidden", flexShrink: 0,
 };
 
