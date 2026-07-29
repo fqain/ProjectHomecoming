@@ -25,7 +25,8 @@ const C = {
   bg2: "#0e1226",
 };
 
-const DEFAULT_COVER_PHOTO = "/images/8.jpg";
+const asset = (path) => `${import.meta.env.BASE_URL}${path}`;
+const DEFAULT_COVER_PHOTO = asset("images/8.jpg");
 const DEFAULT_CLOSING_PHOTO = "https://images.unsplash.com/photo-1500534314209-a25ddb2bd429?auto=format&fit=crop&w=800&q=80";
 const DEFAULT_GALLERY_PHOTOS = [
   "https://images.unsplash.com/photo-1516455590571-18256e5bb9ff?auto=format&fit=crop&w=500&q=80",
@@ -191,17 +192,17 @@ export default function OurStory() {
   const [arrival, setArrival] = useState("2026-07-31T22:25");
   const [departure, setDeparture] = useState("2026-08-07");
   const [heroPhoto, setHeroPhoto] = useState(() => {
-    try { return "/images/1.jpg"; } catch { return null; }
+    try { return asset("images/1.jpg"); } catch { return null; }
   });
   const [prevTrips, setPrevTrips] = useState(() => {
     try {
       return [
-        "/images/2.jpg",
-        "/images/3.jpg",
-        "/images/4.jpg",
-        "/images/5.jpg",
-        "/images/6.jpg",
-        "/images/7.jpg",
+        asset("images/2.jpg"),
+        asset("images/3.jpg"),
+        asset("images/4.jpg"),
+        asset("images/5.jpg"),
+        asset("images/6.jpg"),
+        asset("images/7.jpg"),
       ];
     } catch {
       return Array(6).fill(null);
@@ -476,7 +477,7 @@ export default function OurStory() {
   return (
     <div className="os-root os-page-root" style={{ minHeight: "100vh", background: `radial-gradient(circle at 50% 0%, ${C.bg1} 0%, #151b38 55%, ${C.bg2} 100%)`, padding: "2.25rem 1rem 3rem", display: "flex", flexDirection: "column", alignItems: "center", boxSizing: "border-box", width: "100%" }}>
       <style>{FONTS}</style>
-      <audio ref={audioRef} src="/audio/background.mp4" loop preload="auto" />
+      <audio ref={audioRef} src={asset("audio/background.mp4")} loop preload="auto" />
 
       {/* ---------------- Boarding-pass hero ---------------- */}
       <div style={ticketOuterStyle} className={`os-ticket-outer${!revealed ? " os-idle-float" : ""}`}>
