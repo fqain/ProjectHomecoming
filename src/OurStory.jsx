@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from "react";
+import heic2any from "heic2any";
 import {
   Heart, ChevronLeft, ChevronRight, ImagePlus, Pencil, Check, Crown, Lock,
   Camera, PlaneTakeoff, PlaneLanding, Compass, Stamp,
@@ -23,6 +24,15 @@ const C = {
   bg1: "#1c2440",
   bg2: "#0e1226",
 };
+
+const DEFAULT_COVER_PHOTO = "/images/8.jpg";
+const DEFAULT_CLOSING_PHOTO = "https://images.unsplash.com/photo-1500534314209-a25ddb2bd429?auto=format&fit=crop&w=800&q=80";
+const DEFAULT_GALLERY_PHOTOS = [
+  "https://images.unsplash.com/photo-1516455590571-18256e5bb9ff?auto=format&fit=crop&w=500&q=80",
+  "https://images.unsplash.com/photo-1469854523086-cc02fe5d8800?auto=format&fit=crop&w=500&q=80",
+  "https://images.unsplash.com/photo-1470770903676-69b98201ea1c?auto=format&fit=crop&w=500&q=80",
+  "https://images.unsplash.com/photo-1491553895911-0055eca6402d?auto=format&fit=crop&w=500&q=80",
+];
 
 const FONTS = `
 @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,600&family=EB+Garamond:ital,wght@0,400;0,600;1,400&family=Special+Elite&display=swap');
@@ -105,17 +115,25 @@ const FONTS = `
 /*  Story content                                                      */
 /* ------------------------------------------------------------------ */
 const storyPages = [
-  { id: "where", kind: "text", eyebrow: "01 · The Destination", title: "Where We're Going", body: "Type the destination and what's pulling us there — the food, the view, the reason we picked it." },
-  { id: "day1", kind: "text", eyebrow: "02 · Day One, Fri", title: "Arrival", body: "What we land into — the first evening, the first meal, the first walk." },
-  { id: "day2", kind: "text", eyebrow: "03 · Midweek", title: "Exploring", body: "The plan for the big day — the thing we've been looking forward to most." },
-  { id: "day3", kind: "text", eyebrow: "04 · Day Seven, Fri", title: "Slow Morning, Long Goodbye", body: "How we ease out of it — the last coffee, the last view, before heading home." },
-  { id: "gallery", kind: "gallery", eyebrow: "05 · After the Trip", title: "Our Memories", images: [
+  { id: "day1", kind: "text", eyebrow: "02 · Day One, Fri", title: "Arrival", heroEmoji: "🌸🍫", body: "No words, just so excited you have arrived in the polo and I'm here with you. Your beautiful smile, your never-ending laugh, and just can't wait to spend the whole week around you jaanu. I love you very much now and forever and forever. I hope you enjoy the flowers and chocolates." },
+  { id: "where", kind: "text", eyebrow: "01 · The Adventure", title: "Where We're Going & What We're Doing", body: `Spiderman movie night 🎬
+Disclosure Day screening 🎞️
+Food adventures — pubs, seafood & treats 🍽️
+Mountain climbing & hikes 🥾
+Sunset walks through town 🌅
+Multiplayer games — especially FIFA and F1 🎮🏎️
+Catching up in person — finally! ❤️
+Cork City — lots of coffee & white mochas ☕
+Driving lessons 🚗
+One week of adventure, laughs, and memories together ✨` },
+  { id: "day3", kind: "text", eyebrow: "03 · Day Seven, Fri", title: "Slow Morning, Long Goodbye", heroEmoji: "💛🌷💫", body: "This is the morning I wish never came. I’m having such a hard time digesting, jaanu, that the love of my heart, meri jaanu, is leaving. Don’t worry, I know we’ve taken so many photos on this trip that we’ll both treasure and look back on forever. Meri jaanu, I can’t wait to spend the rest of my life with you in this life and the next, inshallah. I’ll never stop admiring and loving you, jaanu. 💕✨" },
+  { id: "gallery", kind: "gallery", eyebrow: "04 · After the Trip", title: "Our Memories", images: [
     { src: null, caption: "" }, { src: null, caption: "" }, { src: null, caption: "" }, { src: null, caption: "" },
   ] },
 ];
 
-const coverPage = { id: "cover", kind: "cover", title: "Ireland Trip 2026", body: "Fyaz & Rida's Adventure", nameplate: "IRELAND · 2026", photo: null };
-const closingPage = { id: "closing", kind: "cover", title: "To Be Continued …", body: "Filled in with what actually happened, the day we got back.", stampWord: "ARRIVED", nameplate: "SLÁN GO FÓILL", photo: null };
+const coverPage = { id: "cover", kind: "cover", title: "Ireland Trip 2026", body: "Fyaz & Rida's Adventure", nameplate: "IRELAND · 2026", photo: DEFAULT_COVER_PHOTO };
+const closingPage = { id: "closing", kind: "cover", title: "To Be Continued …", body: "Filled in with what actually happened, the day we got back.", stampWord: "ARRIVED", nameplate: "SLÁN GO FÓILL", photo: DEFAULT_CLOSING_PHOTO };
 
 /* ------------------------------------------------------------------ */
 /*  Helpers                                                             */
@@ -152,12 +170,14 @@ function fmtCode(dateStr) {
   if (isNaN(d)) return "--- --";
   return d.toLocaleDateString(undefined, { month: "short", day: "2-digit" }).toUpperCase();
 }
-function readFileAsDataURL(file) {
+async function readFileAsDataURL(file) {
+  const shouldConvert = file.type === "image/heic" || file.type === "image/heif" || /\.heic$/i.test(file.name) || /\.heif$/i.test(file.name);
+  const source = shouldConvert ? await heic2any({ blob: file, toType: "image/jpeg", quality: 0.95 }) : file;
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
     reader.onload = () => resolve(reader.result);
     reader.onerror = reject;
-    reader.readAsDataURL(file);
+    reader.readAsDataURL(source instanceof Blob ? source : file);
   });
 }
 
@@ -168,15 +188,40 @@ export default function OurStory() {
   const [couple, setCouple] = useState("Fyaz & Rida");
   const [fromCity, setFromCity] = useState("HOME");
   const [toCity, setToCity] = useState("TOGETHER");
-  const [arrival, setArrival] = useState("2026-07-31T18:00");
+  const [arrival, setArrival] = useState("2026-07-31T22:25");
   const [departure, setDeparture] = useState("2026-08-07");
-  const [heroPhoto, setHeroPhoto] = useState(null);
-  const [prevTrips, setPrevTrips] = useState(Array(6).fill(null));
+  const [heroPhoto, setHeroPhoto] = useState(() => {
+    try { return "/images/1.jpg"; } catch { return null; }
+  });
+  const [prevTrips, setPrevTrips] = useState(() => {
+    try {
+      return [
+        "/images/2.jpg",
+        "/images/3.jpg",
+        "/images/4.jpg",
+        "/images/5.jpg",
+        "/images/6.jpg",
+        "/images/7.jpg",
+      ];
+    } catch {
+      return Array(6).fill(null);
+    }
+  });
   const [revealed, setRevealed] = useState(false);
-  const [editMode, setEditMode] = useState(true);
+  const [editMode, setEditMode] = useState(() => {
+    try {
+      const saved = window.localStorage.getItem("os-edit-mode");
+      return saved === null ? false : saved === "true";
+    } catch {
+      return false;
+    }
+  });
   const [revealLabel, setRevealLabel] = useState("Until we're together");
   const [arrivedMessage, setArrivedMessage] = useState("She's here. \u{1F451}");
   const [sealLabel, setSealLabel] = useState("The Queen Has Arrived");
+  const [pinOpen, setPinOpen] = useState(false);
+  const [pinCode, setPinCode] = useState("");
+  const [pinError, setPinError] = useState("");
 
   const [pageData, setPageData] = useState([coverPage, ...storyPages, closingPage]);
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -185,9 +230,19 @@ export default function OurStory() {
   const [animating, setAnimating] = useState(false);
   const [noTransition, setNoTransition] = useState(false);
   const wrapRef = useRef(null);
+  const audioRef = useRef(null);
+  const [audioReady, setAudioReady] = useState(false);
 
   const countdown = useCountdown(arrival);
   const reducedMotion = usePrefersReducedMotion();
+
+  useEffect(() => {
+    try {
+      window.localStorage.setItem("os-edit-mode", editMode ? "true" : "false");
+    } catch {
+      // ignore storage errors
+    }
+  }, [editMode]);
 
   useEffect(() => {
     if (countdown.arrived) setRevealed(true);
@@ -264,6 +319,21 @@ export default function OurStory() {
   const showUnderneath = pendingIndex !== null ? pendingIndex : currentIndex;
   const wrapperStyle = (page) => (page?.kind === "cover" ? hardcoverPageStyle : pageBaseStyle);
 
+  const handleSealClick = () => {
+    setPinCode("");
+    setPinError("");
+    setPinOpen(true);
+  };
+
+  const verifyPin = () => {
+    if (pinCode === "0508") {
+      setPinOpen(false);
+      setRevealed(true);
+    } else {
+      setPinError("Incorrect PIN. Try 0508.");
+    }
+  };
+
   /* ---- cover ornament: one small motif, echoing the reference photo's restraint ---- */
   const renderCoverOrnaments = () => (
     <div style={{ position: "absolute", top: "9%", right: "11%", opacity: 0.9 }}>
@@ -294,7 +364,7 @@ export default function OurStory() {
                   <span style={{ fontFamily: "'EB Garamond', serif", fontSize: "0.72rem" }}>add photo</span>
                 </div>
               )}
-              <input type="file" accept="image/*" style={{ display: "none" }} onChange={(e) => handleCoverPhotoUpload(idx, e.target.files[0])} />
+              <input type="file" accept="image/*,.heic,.heif" style={{ display: "none" }} onChange={(e) => handleCoverPhotoUpload(idx, e.target.files[0])} />
             </label>
 
             {editMode ? (
@@ -358,7 +428,7 @@ export default function OurStory() {
                       <span style={{ fontFamily: "'EB Garamond', serif", fontSize: "0.75rem" }}>add photo</span>
                     </div>
                   )}
-                  <input type="file" accept="image/*" style={{ display: "none" }} onChange={(e) => handleImageUpload(idx, slotIdx, e.target.files[0])} />
+                  <input type="file" accept="image/*,.heic,.heif" style={{ display: "none" }} onChange={(e) => handleImageUpload(idx, slotIdx, e.target.files[0])} />
                 </label>
                 {editMode ? (
                   <input className="os-edit-input" placeholder="caption…" value={img.caption} onChange={(e) => handleCaptionChange(idx, slotIdx, e.target.value)}
@@ -383,6 +453,12 @@ export default function OurStory() {
           <h2 className="os-display os-page-title" style={pageTitleStyle}>{page.title}</h2>
         )}
         <div style={{ width: "2.25rem", height: "2px", background: C.gold, margin: "0.75rem 0 1.1rem" }} />
+        {!editMode && page.heroEmoji && (
+          <div style={{ display: "inline-flex", alignItems: "center", justifyContent: "center", gap: "0.4rem", alignSelf: "flex-start", marginBottom: "0.75rem", padding: "0.45rem 0.75rem", borderRadius: "999px", border: "1px solid rgba(201,162,75,0.28)", background: "rgba(255,255,255,0.08)", color: C.inkSoft, fontSize: "1rem" }}>
+            <span aria-hidden="true">{page.heroEmoji}</span>
+            <span style={{ fontFamily: "'EB Garamond', serif", fontSize: "0.82rem", fontWeight: 600 }}>for you</span>
+          </div>
+        )}
         {editMode ? (
           <textarea className="os-edit-input" aria-label="Page body" value={page.body} onChange={(e) => updatePage(idx, "body", e.target.value)}
             style={{ ...pageBodyStyle, background: "transparent", border: "none", flex: 1, resize: "none" }} />
@@ -400,6 +476,7 @@ export default function OurStory() {
   return (
     <div className="os-root os-page-root" style={{ minHeight: "100vh", background: `radial-gradient(circle at 50% 0%, ${C.bg1} 0%, #151b38 55%, ${C.bg2} 100%)`, padding: "2.25rem 1rem 3rem", display: "flex", flexDirection: "column", alignItems: "center", boxSizing: "border-box", width: "100%" }}>
       <style>{FONTS}</style>
+      <audio ref={audioRef} src="/audio/background.mp4" loop preload="auto" />
 
       {/* ---------------- Boarding-pass hero ---------------- */}
       <div style={ticketOuterStyle} className={`os-ticket-outer${!revealed ? " os-idle-float" : ""}`}>
@@ -486,7 +563,7 @@ export default function OurStory() {
                 <span style={{ fontSize: "0.68rem", textAlign: "center" }}>photo</span>
               </div>
             )}
-            <input type="file" accept="image/*" style={{ display: "none" }} onChange={(e) => handleHeroUpload(e.target.files[0])} />
+            <input type="file" accept="image/*,.heic,.heif" style={{ display: "none" }} onChange={(e) => handleHeroUpload(e.target.files[0])} />
           </label>
           <span className="os-stamp-font" style={{ color: "#9c8f66", fontSize: "0.58rem", marginTop: "0.5rem", writingMode: "vertical-rl", letterSpacing: "0.1em" }}>SEAT 2A</span>
         </div>
@@ -499,11 +576,35 @@ export default function OurStory() {
         </div>
       )}
 
-      {!revealed && (
-        <button className="os-seal-btn" onClick={() => setRevealed(true)} style={sealBtnStyle}>
+      {!revealed && !pinOpen && (
+        <button className="os-seal-btn" onClick={handleSealClick} style={sealBtnStyle}>
           <Crown size={15} /> {sealLabel}
         </button>
       )}
+
+      {!revealed && pinOpen && (
+        <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "0.5rem", marginTop: "1rem" }}>
+          <input
+            type="password"
+            inputMode="numeric"
+            maxLength={4}
+            value={pinCode}
+            onChange={(e) => setPinCode(e.target.value.replace(/[^0-9]/g, ""))}
+            onKeyDown={(e) => { if (e.key === "Enter") verifyPin(); }}
+            placeholder="Enter 4-digit PIN"
+            className="os-edit-input"
+            style={{ textAlign: "center", width: "10rem", padding: "0.55rem 0.75rem", borderRadius: "12px", border: "1px solid rgba(201,162,75,0.4)", background: "rgba(255,255,255,0.08)", color: "#f7f0e1" }}
+          />
+          <div style={{ display: "flex", gap: "0.6rem" }}>
+            <button className="os-seal-btn" onClick={verifyPin} style={sealBtnStyle}>Unlock</button>
+            <button className="os-seal-btn" onClick={() => { setPinOpen(false); setPinCode(""); setPinError(""); }} style={{ ...sealBtnStyle, background: "rgba(255,255,255,0.08)", color: "#f7f0e1" }}>
+              Cancel
+            </button>
+          </div>
+          {pinError && <p style={{ color: "#ffb3b3", fontSize: "0.82rem", margin: 0 }}>{pinError}</p>}
+        </div>
+      )}
+
       {editMode && !revealed && (
         <input className="os-edit-input" value={sealLabel} onChange={(e) => setSealLabel(e.target.value)}
           style={{ color: "#9aa3c9", fontSize: "0.72rem", marginTop: "0.4rem", textAlign: "center", background: "transparent", border: "none", borderBottom: "1px dashed rgba(201,162,75,0.4)" }} />
@@ -511,20 +612,22 @@ export default function OurStory() {
 
 <br></br>
       {/* ---------------- Previous trips, stamp strip ---------------- */}
-      <div style={{ width: "100%", maxWidth: "30rem", marginBottom: "2rem" }}>
-        <p className="os-stamp-font" style={{ ...eyebrowStyle, color: C.gold, textAlign: "center" }}>PASSPORT · PRIOR STAMPS</p>
-        <h3 className="os-display" style={{ color: "#f7f0e1", textAlign: "center", margin: "0.2rem 0 1.1rem", fontSize: "1.3rem" }}>Our Adventures So Far</h3>
-        <div style={{ display: "flex", flexWrap: "wrap", justifyContent: "center", gap: "1rem", background: "rgba(255,255,255,0.04)", border: "1px dashed rgba(201,162,75,0.3)", borderRadius: "14px", padding: "1.4rem 1rem" }}>
-          {prevTrips.map((img, i) => (
-            <label key={i} className="polaroid os-prevtrip-item" style={{ width: "6.5rem", transform: `rotate(${rotations[i]}deg)`, cursor: "pointer" }}>
-              <div style={{ width: "100%", aspectRatio: "1 / 1", background: "#e9e0c8", display: "flex", alignItems: "center", justifyContent: "center", borderRadius: "2px", overflow: "hidden" }}>
-                {img ? <img src={img} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} /> : <ImagePlus size={18} color="#b09a6b" />}
-              </div>
-              <input type="file" accept="image/*" style={{ display: "none" }} onChange={(e) => handlePrevTripUpload(i, e.target.files[0])} />
-            </label>
-          ))}
+      {revealed && (
+        <div style={{ width: "100%", maxWidth: "30rem", marginBottom: "2rem" }}>
+          <p className="os-stamp-font" style={{ ...eyebrowStyle, color: C.gold, textAlign: "center" }}>PASSPORT · PRIOR STAMPS</p>
+          <h3 className="os-display" style={{ color: "#f7f0e1", textAlign: "center", margin: "0.2rem 0 1.1rem", fontSize: "1.3rem" }}>Our Adventures So Far</h3>
+          <div style={{ display: "flex", flexWrap: "wrap", justifyContent: "center", gap: "1rem", background: "rgba(255,255,255,0.04)", border: "1px dashed rgba(201,162,75,0.3)", borderRadius: "14px", padding: "1.4rem 1rem" }}>
+            {prevTrips.map((img, i) => (
+              <label key={i} className="polaroid os-prevtrip-item" style={{ width: "6.5rem", transform: `rotate(${rotations[i]}deg)`, cursor: "pointer" }}>
+                <div style={{ width: "100%", aspectRatio: "1 / 1", background: "#e9e0c8", display: "flex", alignItems: "center", justifyContent: "center", borderRadius: "2px", overflow: "hidden" }}>
+                  {img ? <img src={img} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} /> : <ImagePlus size={18} color="#b09a6b" />}
+                </div>
+                <input type="file" accept="image/*,.heic,.heif" style={{ display: "none" }} onChange={(e) => handlePrevTripUpload(i, e.target.files[0])} />
+              </label>
+            ))}
+          </div>
         </div>
-      </div>
+      )}
 
       {/* ---------------- Flip-book ---------------- */}
       {!revealed ? (
@@ -668,7 +771,7 @@ const exitStampStyle = {
 
 const eyebrowStyle = { color: C.goldDeep, fontSize: "0.72rem", letterSpacing: "0.06em", margin: 0 };
 const pageTitleStyle = { color: C.ink, fontSize: "1.45rem", margin: "0.25rem 0 0", fontWeight: 600 };
-const pageBodyStyle = { color: C.inkSoft, fontSize: "1.03rem", lineHeight: 1.6, fontFamily: "'EB Garamond', serif" };
+const pageBodyStyle = { color: C.inkSoft, fontSize: "1.03rem", lineHeight: 1.6, fontFamily: "'EB Garamond', serif", whiteSpace: 'pre-wrap' };
 const coverTitleStyle = { color: C.goldPale, fontSize: "1.85rem", fontWeight: 700, margin: "0 0 0.75rem" };
 const coverBodyStyle = { fontStyle: "italic", color: "#b39f78", fontSize: "1.03rem", margin: 0, fontFamily: "'EB Garamond', serif" };
 const captionStyle = { fontStyle: "italic", color: C.goldDeep, fontSize: "0.72rem", margin: 0, background: "transparent", border: "none", padding: 0, fontFamily: "'EB Garamond', serif" };
