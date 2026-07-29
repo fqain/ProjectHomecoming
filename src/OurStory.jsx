@@ -57,6 +57,9 @@ const FONTS = `
 .os-seal-btn:hover { transform: translateY(-2px); box-shadow: 0 10px 22px rgba(0,0,0,0.4); }
 .os-seal-btn:active { transform: translateY(0px) scale(0.98); }
 
+.os-edit-btn svg, .os-seal-btn svg { display: block; flex-shrink: 0; }
+.os-edit-btn { font: inherit; }
+
 .os-ticket-edit { background: transparent; border: none; border-bottom: 1px dashed rgba(255,255,255,0.4); }
 
 .os-lace {
@@ -111,8 +114,8 @@ const storyPages = [
   ] },
 ];
 
-const coverPage = { id: "cover", kind: "cover", title: "Ireland Trip 2026", body: "Our Adventure", nameplate: "IRELAND · 2026" };
-const closingPage = { id: "closing", kind: "cover", title: "To Be Continued …", body: "Filled in with what actually happened, the day we got back.", stampWord: "ARRIVED", nameplate: "SLÁN GO FÓILL" };
+const coverPage = { id: "cover", kind: "cover", title: "Ireland Trip 2026", body: "Fyaz & Rida's Adventure", nameplate: "IRELAND · 2026", photo: null };
+const closingPage = { id: "closing", kind: "cover", title: "To Be Continued …", body: "Filled in with what actually happened, the day we got back.", stampWord: "ARRIVED", nameplate: "SLÁN GO FÓILL", photo: null };
 
 /* ------------------------------------------------------------------ */
 /*  Helpers                                                             */
@@ -246,6 +249,12 @@ export default function OurStory() {
     setHeroPhoto(await readFileAsDataURL(file));
   };
 
+  const handleCoverPhotoUpload = async (pageIdx, file) => {
+    if (!file) return;
+    const dataUrl = await readFileAsDataURL(file);
+    updatePage(pageIdx, "photo", dataUrl);
+  };
+
   const handlePrevTripUpload = async (idx, file) => {
     if (!file) return;
     const dataUrl = await readFileAsDataURL(file);
@@ -288,6 +297,19 @@ export default function OurStory() {
             ) : (
               <p className="os-cover-body" style={coverBodyStyle}>{page.body}</p>
             )}
+
+            <label style={coverPhotoSlotStyle}>
+              {page.photo ? (
+                <img src={page.photo} alt="" style={{ width: "100%", height: "100%", objectFit: "cover", borderRadius: "8px" }} />
+              ) : (
+                <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "0.3rem", color: "rgba(231,214,169,0.75)" }}>
+                  <ImagePlus size={20} />
+                  <span style={{ fontFamily: "'EB Garamond', serif", fontSize: "0.72rem" }}>add photo</span>
+                </div>
+              )}
+              <input type="file" accept="image/*" style={{ display: "none" }} onChange={(e) => handleCoverPhotoUpload(idx, e.target.files[0])} />
+            </label>
+
             {page.stampWord && (
               <div className="os-stamp-font" style={exitStampStyle}>
                 <Stamp size={13} style={{ marginRight: "0.3rem", verticalAlign: "-2px" }} />
@@ -324,7 +346,7 @@ export default function OurStory() {
             <h2 className="os-display os-page-title" style={pageTitleStyle}>{page.title}</h2>
           )}
           <div style={{ width: "2.25rem", height: "2px", background: C.gold, margin: "0.6rem 0 0.9rem" }} />
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0.85rem", flex: 1, overflow: "auto" }}>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gridAutoRows: "min-content", gap: "0.85rem", alignContent: "start", overflow: "auto" }}>
             {page.images.map((img, slotIdx) => (
               <div key={slotIdx} style={{ display: "flex", flexDirection: "column", gap: "0.3rem" }}>
                 <label style={imgSlotStyle}>
@@ -487,7 +509,7 @@ export default function OurStory() {
           style={{ color: "#9aa3c9", fontSize: "0.72rem", marginTop: "0.4rem", textAlign: "center", background: "transparent", border: "none", borderBottom: "1px dashed rgba(201,162,75,0.4)" }} />
       )}
 
-      <button className="os-navbtn" onClick={() => setEditMode((v) => !v)} style={editBtnStyle}>
+      <button className="os-navbtn os-edit-btn" onClick={() => setEditMode((v) => !v)} style={editBtnStyle}>
         {editMode ? <Check size={14} /> : <Pencil size={14} />}
         {editMode ? "Done editing" : "Edit story"}
       </button>
@@ -648,10 +670,12 @@ const coverBodyStyle = { fontStyle: "italic", color: "#b39f78", fontSize: "1.03r
 const captionStyle = { fontStyle: "italic", color: C.goldDeep, fontSize: "0.72rem", margin: 0, background: "transparent", border: "none", padding: 0, fontFamily: "'EB Garamond', serif" };
 
 const editBtnStyle = {
-  display: "flex", alignItems: "center", gap: "0.4rem",
+  display: "inline-flex", alignItems: "center", justifyContent: "center", gap: "0.4rem",
   background: "rgba(201,162,75,0.15)", border: "1px solid rgba(201,162,75,0.4)",
-  color: "#f7f0e1", borderRadius: "999px", padding: "0.4rem 0.9rem",
-  fontSize: "0.85rem", marginBottom: "1.6rem", cursor: "pointer",
+  color: "#f7f0e1", borderRadius: "999px", padding: "0.5rem 1rem",
+  fontFamily: "'EB Garamond', serif", fontSize: "0.85rem", lineHeight: 1,
+  whiteSpace: "nowrap", marginBottom: "1.6rem", cursor: "pointer",
+  WebkitAppearance: "none", appearance: "none",
 };
 
 const sealBtnStyle = {
@@ -669,10 +693,18 @@ const navBtnStyle = {
   display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer",
 };
 
+const coverPhotoSlotStyle = {
+  position: "relative", zIndex: 1,
+  display: "flex", alignItems: "center", justifyContent: "center",
+  width: "7.2rem", height: "7.2rem", margin: "1rem auto 0.6rem",
+  borderRadius: "10px", border: "1.5px dashed rgba(231,214,169,0.55)",
+  background: "rgba(0,0,0,0.15)", cursor: "pointer", overflow: "hidden", flexShrink: 0,
+};
+
 const imgSlotStyle = {
   display: "flex", alignItems: "center", justifyContent: "center",
-  border: "1.5px dashed #d8c48f", borderRadius: "6px",
-  background: "rgba(201,162,75,0.06)", cursor: "pointer", minHeight: "4.6rem",
+  border: "1.5px dashed #d8c48f", borderRadius: "6px", aspectRatio: "1 / 1",
+  background: "rgba(201,162,75,0.06)", cursor: "pointer",
 };
 
 const heroPhotoStyle = {
