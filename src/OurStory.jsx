@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef, useCallback } from "react";
 import heic2any from "heic2any";
 import {
   Heart, ChevronLeft, ChevronRight, ImagePlus, Pencil, Check, Crown, Lock,
-  Camera, PlaneTakeoff, PlaneLanding, Compass, Stamp,
+  Camera, PlaneTakeoff, PlaneLanding, Compass, Stamp, Play, Pause,
 } from "lucide-react";
 
 /* ------------------------------------------------------------------ */
@@ -90,6 +90,31 @@ const FONTS = `
   .os-idle-float, .os-stamp-in, .os-shimmer, .os-fade-up { animation: none !important; }
 }
 
+/* ---- Phones & small tablets (≤ 560px): give the book the full width ---- */
+@media (max-width: 560px) {
+  /* the arrows move under the book, so the page no longer needs side gutters */
+  .os-book-outer { max-width: 100% !important; padding-left: 0; padding-right: 0; box-sizing: border-box; }
+  .os-book-wrap { aspect-ratio: 3 / 4.15 !important; }
+
+  .os-navbtn-left, .os-navbtn-right {
+    width: 2.6rem !important; height: 2.6rem !important;
+    top: auto !important; bottom: -3.5rem !important; transform: none !important;
+  }
+  .os-navbtn-left { left: 0.75rem !important; }
+  .os-navbtn-right { right: 0.75rem !important; }
+  .os-navbtn-left:hover:not(:disabled), .os-navbtn-right:hover:not(:disabled) { transform: none; }
+  .os-dots-row { margin-top: 4.9rem !important; }
+
+  .os-page-inner { padding: 1.5rem 1.35rem 1.4rem !important; overflow-y: auto; -webkit-overflow-scrolling: touch; }
+  .os-cover-inner { padding: 1.75rem 1.25rem !important; }
+  .os-cover-photo { width: 9.5rem !important; height: 9.5rem !important; margin: 0.25rem auto 0.85rem !important; }
+  .os-gallery-grid { gap: 0.7rem !important; }
+
+  .os-cover-title { font-size: 1.7rem !important; }
+  .os-page-title { font-size: 1.3rem !important; }
+  .os-page-body { font-size: 1rem !important; line-height: 1.75 !important; }
+}
+
 /* ---- iPhone 16 / narrow phones (≤ 420px logical width) ---- */
 @media (max-width: 420px) {
   .os-page-root { padding: 1.1rem 0.65rem 2.25rem !important; }
@@ -99,14 +124,7 @@ const FONTS = `
   .os-hero-photo { width: 2.9rem !important; height: 2.9rem !important; }
   .os-countdown-num { font-size: 1.28rem !important; }
   .os-ticket-field-value { font-size: 0.92rem !important; }
-  .os-book-outer { padding-left: 2.3rem; padding-right: 2.3rem; box-sizing: border-box; max-width: 100% !important; }
-  .os-navbtn { width: 2rem !important; height: 2rem !important; }
-  .os-navbtn-left { left: 0.15rem !important; }
-  .os-navbtn-right { right: 0.15rem !important; }
-  .os-cover-title { font-size: 1.45rem !important; }
-  .os-cover-body { font-size: 0.9rem !important; }
-  .os-page-title { font-size: 1.18rem !important; }
-  .os-page-body { font-size: 0.9rem !important; }
+  .os-cover-body { font-size: 0.95rem !important; }
   .os-prevtrip-item { width: 5.1rem !important; }
   .os-nameplate-text { font-size: 0.7rem !important; }
 }
@@ -232,10 +250,31 @@ export default function OurStory() {
   const [noTransition, setNoTransition] = useState(false);
   const wrapRef = useRef(null);
   const audioRef = useRef(null);
-  const [audioReady, setAudioReady] = useState(false);
+  const [audioPlaying, setAudioPlaying] = useState(false);
 
   const countdown = useCountdown(arrival);
   const reducedMotion = usePrefersReducedMotion();
+
+  const toggleAudio = useCallback(() => {
+    const el = audioRef.current;
+    if (!el) return;
+    if (el.paused) el.play().catch(() => setAudioPlaying(false));
+    else el.pause();
+  }, []);
+
+  useEffect(() => {
+    const session = navigator.mediaSession;
+    if (!session) return;
+    if (typeof window.MediaMetadata === "function") {
+      session.metadata = new window.MediaMetadata({ title: "Ireland Trip 2026", artist: couple });
+    }
+    session.setActionHandler("play", () => audioRef.current?.play());
+    session.setActionHandler("pause", () => audioRef.current?.pause());
+    return () => {
+      session.setActionHandler("play", null);
+      session.setActionHandler("pause", null);
+    };
+  }, [couple]);
 
   useEffect(() => {
     try {
@@ -355,8 +394,8 @@ export default function OurStory() {
           ))}
           {renderCoverOrnaments()}
 
-          <div style={{ position: "relative", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", width: "100%", textAlign: "center", padding: "2.4rem 1.8rem" }}>
-            <label style={{ ...coverPhotoSlotStyle, marginBottom: "1rem" }}>
+          <div className="os-cover-inner" style={{ position: "relative", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", width: "100%", textAlign: "center", padding: "2.4rem 1.8rem" }}>
+            <label className="os-cover-photo" style={{ ...coverPhotoSlotStyle, marginBottom: "1rem" }}>
               {page.photo ? (
                 <img src={page.photo} alt="" style={{ width: "100%", height: "100%", objectFit: "cover", borderRadius: "8px" }} />
               ) : (
@@ -408,7 +447,7 @@ export default function OurStory() {
 
     if (page.kind === "gallery") {
       return (
-        <div style={{ padding: "2.1rem 2.1rem 1.6rem", height: "100%", display: "flex", flexDirection: "column" }}>
+        <div className="os-page-inner" style={{ padding: "2.1rem 2.1rem 1.6rem", height: "100%", display: "flex", flexDirection: "column", boxSizing: "border-box" }}>
           <p className="os-stamp-font" style={eyebrowStyle}>{page.eyebrow}</p>
           {editMode ? (
             <input className="os-edit-input" aria-label="Gallery title" value={page.title} onChange={(e) => updatePage(idx, "title", e.target.value)}
@@ -417,7 +456,7 @@ export default function OurStory() {
             <h2 className="os-display os-page-title" style={pageTitleStyle}>{page.title}</h2>
           )}
           <div style={{ width: "2.25rem", height: "2px", background: C.gold, margin: "0.6rem 0 0.9rem" }} />
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gridAutoRows: "min-content", gap: "0.85rem", alignContent: "start", overflow: "auto" }}>
+          <div className="os-gallery-grid" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gridAutoRows: "min-content", gap: "0.85rem", alignContent: "start", overflow: "auto" }}>
             {page.images.map((img, slotIdx) => (
               <div key={slotIdx} style={{ display: "flex", flexDirection: "column", gap: "0.3rem" }}>
                 <label style={imgSlotStyle}>
@@ -445,7 +484,7 @@ export default function OurStory() {
     }
 
     return (
-      <div style={{ padding: "2.25rem", height: "100%", display: "flex", flexDirection: "column" }}>
+      <div className="os-page-inner" style={{ padding: "2.25rem", height: "100%", display: "flex", flexDirection: "column", boxSizing: "border-box" }}>
         {page.eyebrow && <p className="os-stamp-font" style={eyebrowStyle}>{page.eyebrow}</p>}
         {editMode ? (
           <input className="os-edit-input" aria-label="Page title" value={page.title} onChange={(e) => updatePage(idx, "title", e.target.value)}
@@ -477,7 +516,14 @@ export default function OurStory() {
   return (
     <div className="os-root os-page-root" style={{ minHeight: "100vh", background: `radial-gradient(circle at 50% 0%, ${C.bg1} 0%, #151b38 55%, ${C.bg2} 100%)`, padding: "2.25rem 1rem 3rem", display: "flex", flexDirection: "column", alignItems: "center", boxSizing: "border-box", width: "100%" }}>
       <style>{FONTS}</style>
-      <audio ref={audioRef} src={asset("audio/background.mp4")} loop preload="auto" />
+      <audio
+        ref={audioRef}
+        src={asset("audio/background.mp4")}
+        loop
+        preload="metadata"
+        onPlay={() => setAudioPlaying(true)}
+        onPause={() => setAudioPlaying(false)}
+      />
 
       {/* ---------------- Boarding-pass hero ---------------- */}
       <div style={ticketOuterStyle} className={`os-ticket-outer${!revealed ? " os-idle-float" : ""}`}>
@@ -569,6 +615,17 @@ export default function OurStory() {
           <span className="os-stamp-font" style={{ color: "#9c8f66", fontSize: "0.58rem", marginTop: "0.5rem", writingMode: "vertical-rl", letterSpacing: "0.1em" }}>SEAT 2A</span>
         </div>
       </div>
+
+      <button
+        className="os-seal-btn os-audio-btn"
+        onClick={toggleAudio}
+        aria-pressed={audioPlaying}
+        aria-label={audioPlaying ? "Pause background music" : "Play background music"}
+        style={audioBtnStyle}
+      >
+        {audioPlaying ? <Pause size={14} /> : <Play size={14} />}
+        {audioPlaying ? "Pause music" : "Play music"}
+      </button>
 
       {editMode && (
         <div style={{ display: "flex", gap: "0.5rem", justifyContent: "center", marginTop: "0.9rem", flexWrap: "wrap" }}>
@@ -679,7 +736,7 @@ export default function OurStory() {
             </div>
           </div>
 
-          <div style={{ display: "flex", gap: "0.5rem", marginTop: "1.6rem" }} role="tablist" aria-label="Story pages">
+          <div className="os-dots-row" style={{ display: "flex", gap: "0.5rem", marginTop: "1.6rem" }} role="tablist" aria-label="Story pages">
             {pageData.map((p, i) => (
               <div key={p.id} role="tab" aria-selected={i === currentIndex} tabIndex={0} className="os-dot"
                 onClick={() => jumpTo(i)} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") jumpTo(i); }}
@@ -792,6 +849,15 @@ const sealBtnStyle = {
   border: "none", color: "#2a1e0a", borderRadius: "999px", padding: "0.55rem 1.1rem",
   fontFamily: "'Playfair Display', serif", fontWeight: 600, fontSize: "0.9rem",
   marginTop: "1.1rem", cursor: "pointer", boxShadow: "0 6px 16px rgba(0,0,0,0.35)",
+};
+
+const audioBtnStyle = {
+  display: "inline-flex", alignItems: "center", gap: "0.4rem", justifyContent: "center",
+  background: "rgba(255,255,255,0.08)", border: "1px solid rgba(201,162,75,0.4)",
+  color: "#f7f0e1", borderRadius: "999px", padding: "0.5rem 1rem",
+  fontFamily: "'EB Garamond', serif", fontSize: "0.85rem", lineHeight: 1,
+  whiteSpace: "nowrap", marginTop: "0.2rem", cursor: "pointer",
+  WebkitAppearance: "none", appearance: "none",
 };
 
 const navBtnStyle = {
