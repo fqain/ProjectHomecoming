@@ -92,23 +92,42 @@ const FONTS = `
 
 /* ---- iPhone 16 / narrow phones (≤ 420px logical width) ---- */
 @media (max-width: 420px) {
-  .os-page-root { padding: 1.1rem 0.65rem 2.25rem !important; }
-  .os-ticket-outer { max-width: 100% !important; border-radius: 14px !important; }
-  .os-ticket-main { padding: 0.85rem 0.85rem !important; }
-  .os-ticket-stub { width: 4.4rem !important; padding: 0.7rem 0.4rem !important; }
-  .os-hero-photo { width: 2.9rem !important; height: 2.9rem !important; }
-  .os-countdown-num { font-size: 1.28rem !important; }
-  .os-ticket-field-value { font-size: 0.92rem !important; }
-  .os-book-outer { padding-left: 2.3rem; padding-right: 2.3rem; box-sizing: border-box; max-width: 100% !important; }
-  .os-navbtn { width: 2rem !important; height: 2rem !important; }
-  .os-navbtn-left { left: 0.15rem !important; }
-  .os-navbtn-right { right: 0.15rem !important; }
-  .os-cover-title { font-size: 1.45rem !important; }
-  .os-cover-body { font-size: 0.9rem !important; }
-  .os-page-title { font-size: 1.18rem !important; }
-  .os-page-body { font-size: 0.9rem !important; }
-  .os-prevtrip-item { width: 5.1rem !important; }
-  .os-nameplate-text { font-size: 0.7rem !important; }
+  .os-page-root { padding: 0.75rem 0.4rem 2rem !important; }
+  .os-ticket-outer { max-width: 100% !important; border-radius: 12px !important; }
+  .os-ticket-main { padding: 0.65rem 0.7rem !important; }
+  .os-ticket-stub { width: 3.6rem !important; padding: 0.5rem 0.3rem !important; }
+  .os-hero-photo { width: 2.4rem !important; height: 2.4rem !important; }
+  .os-countdown-num { font-size: 1.1rem !important; }
+  .os-ticket-field-value { font-size: 0.82rem !important; }
+  .os-book-outer { padding-left: 1.8rem; padding-right: 1.8rem; box-sizing: border-box; max-width: 100% !important; }
+  .os-navbtn { width: 1.7rem !important; height: 1.7rem !important; }
+  .os-navbtn-left { left: 0rem !important; }
+  .os-navbtn-right { right: 0rem !important; }
+  .os-cover-title { font-size: 1.2rem !important; }
+  .os-cover-body { font-size: 0.78rem !important; }
+  .os-page-title { font-size: 1rem !important; }
+  .os-page-body { font-size: 0.82rem !important; }
+  .os-prevtrip-item { width: 4rem !important; }
+  .os-nameplate-text { font-size: 0.6rem !important; }
+  .os-ticket-kicker { font-size: 0.55rem !important; }
+  .os-ticket-field-label { font-size: 0.5rem !important; }
+  .os-ticket-small-code { font-size: 0.65rem !important; }
+  .os-cover-photo-slot { width: 7rem !important; height: 7rem !important; }
+  .os-img-slot { min-height: 5rem !important; }
+  .os-gallery-grid { grid-template-columns: 1fr !important; gap: 0.5rem !important; }
+  .os-emoji-tag { font-size: 0.75rem !important; padding: 0.3rem 0.5rem !important; }
+  .os-rivet { width: 6px !important; height: 6px !important; }
+  .os-nameplate-wrap { left: 8% !important; right: 8% !important; }
+  .os-nameplate { padding: 0.25rem 0.6rem !important; }
+  .os-stamp-exit { bottom: 0.8rem !important; right: 1rem !important; font-size: 0.55rem !important; }
+  .os-corner-mark { width: 6px !important; height: 6px !important; }
+  .os-frame-inset { inset: 6px !important; }
+  .os-page-gallery-pad { padding: 1.1rem 1rem 1rem !important; }
+  .os-page-text-pad { padding: 1.1rem !important; }
+  .os-page-cover-pad { padding: 0.6rem 1rem !important; }
+  .os-prevtrip-container { gap: 0.6rem !important; padding: 0.8rem 0.6rem !important; }
+  .os-countdown-gap { gap: 0.3rem !important; }
+  .os-passenger-input { width: 5rem !important; }
 }
 `;
 
@@ -152,6 +171,17 @@ function useCountdown(targetISO) {
   const minutes = Math.floor((diff / 60000) % 60);
   const seconds = Math.floor((diff / 1000) % 60);
   return { days, hours, minutes, seconds, arrived: diff <= 0 };
+}
+
+function useNarrow() {
+  const [narrow, setNarrow] = useState(false);
+  useEffect(() => {
+    const check = () => setNarrow(window.innerWidth <= 420);
+    check();
+    window.addEventListener("resize", check);
+    return () => window.removeEventListener("resize", check);
+  }, []);
+  return narrow;
 }
 
 function usePrefersReducedMotion() {
@@ -236,6 +266,8 @@ export default function OurStory() {
 
   const countdown = useCountdown(arrival);
   const reducedMotion = usePrefersReducedMotion();
+  const narrow = useNarrow();
+  const [audioPlaying, setAudioPlaying] = useState(false);
 
   useEffect(() => {
     try {
@@ -317,6 +349,16 @@ export default function OurStory() {
     setPrevTrips((prev) => prev.map((p, i) => (i === idx ? dataUrl : p)));
   };
 
+  const toggleAudio = () => {
+    if (!audioRef.current) return;
+    if (audioPlaying) {
+      audioRef.current.pause();
+    } else {
+      audioRef.current.play().catch(() => {});
+    }
+    setAudioPlaying((v) => !v);
+  };
+
   const showUnderneath = pendingIndex !== null ? pendingIndex : currentIndex;
   const wrapperStyle = (page) => (page?.kind === "cover" ? hardcoverPageStyle : pageBaseStyle);
 
@@ -350,13 +392,15 @@ export default function OurStory() {
           ? `linear-gradient(135deg, ${C.leatherLight} 0%, ${C.leather} 55%, ${C.leatherDark} 100%)`
           : `linear-gradient(135deg, ${C.teal} 0%, #245951 55%, #163a35 100%)` }}>
           {/* gold corner brackets, like the reference photo */}
+          <div className="os-corner-marks">
           {["tl", "tr", "bl", "br"].map((corner) => (
-            <div key={corner} style={goldCornerStyle(corner)} />
+            <div key={corner} style={goldCornerStyle(corner, narrow ? 16 : 26)} />
           ))}
+          </div>
           {renderCoverOrnaments()}
 
-          <div style={{ position: "relative", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", width: "100%", textAlign: "center", padding: "2.4rem 1.8rem" }}>
-            <label style={{ ...coverPhotoSlotStyle, marginBottom: "1rem" }}>
+          <div className="os-page-cover-pad" style={{ position: "relative", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", width: "100%", textAlign: "center", padding: narrow ? "0.6rem 1rem" : "2.4rem 1.8rem" }}>
+            <label className="os-cover-photo-slot" style={{ ...coverPhotoSlotStyle, width: narrow ? "7rem" : "12rem", height: narrow ? "7rem" : "12rem", margin: narrow ? "0.3rem auto 0.3rem" : "1rem auto 1rem", marginBottom: narrow ? "0.3rem" : "1rem" }}>
               {page.photo ? (
                 <img src={page.photo} alt="" style={{ width: "100%", height: "100%", objectFit: "cover", borderRadius: "8px" }} />
               ) : (
@@ -382,17 +426,17 @@ export default function OurStory() {
             )}
 
             {page.stampWord && (
-              <div className="os-stamp-font" style={exitStampStyle}>
-                <Stamp size={13} style={{ marginRight: "0.3rem", verticalAlign: "-2px" }} />
+              <div className="os-stamp-font os-stamp-exit" style={exitStampStyle}>
+                <Stamp size={narrow ? 10 : 13} style={{ marginRight: "0.3rem", verticalAlign: "-2px" }} />
                 {page.stampWord}
               </div>
             )}
           </div>
 
           {/* nameplate strip, riveted, like the reference photo */}
-          <div style={nameplateWrapStyle}>
-            <div style={rivetStyle} />
-            <div style={nameplateStyle}>
+          <div className="os-nameplate-wrap" style={nameplateWrapStyle}>
+            <div className="os-rivet" style={rivetStyle} />
+            <div className="os-nameplate" style={nameplateStyle}>
               {editMode ? (
                 <input aria-label="Nameplate text" className="os-edit-input os-nameplate-text" value={page.nameplate || ""} onChange={(e) => updatePage(idx, "nameplate", e.target.value.toUpperCase())}
                   style={{ ...nameplateTextStyle, background: "transparent", border: "none", textAlign: "center", width: "100%" }} />
@@ -400,7 +444,7 @@ export default function OurStory() {
                 <span className="os-nameplate-text" style={nameplateTextStyle}>{page.nameplate}</span>
               )}
             </div>
-            <div style={rivetStyle} />
+            <div className="os-rivet" style={rivetStyle} />
           </div>
         </div>
       );
@@ -408,7 +452,7 @@ export default function OurStory() {
 
     if (page.kind === "gallery") {
       return (
-        <div style={{ padding: "2.1rem 2.1rem 1.6rem", height: "100%", display: "flex", flexDirection: "column" }}>
+        <div className="os-page-gallery-pad" style={{ padding: narrow ? "1.1rem 1rem 1rem" : "2.1rem 2.1rem 1.6rem", height: "100%", display: "flex", flexDirection: "column" }}>
           <p className="os-stamp-font" style={eyebrowStyle}>{page.eyebrow}</p>
           {editMode ? (
             <input className="os-edit-input" aria-label="Gallery title" value={page.title} onChange={(e) => updatePage(idx, "title", e.target.value)}
@@ -417,10 +461,10 @@ export default function OurStory() {
             <h2 className="os-display os-page-title" style={pageTitleStyle}>{page.title}</h2>
           )}
           <div style={{ width: "2.25rem", height: "2px", background: C.gold, margin: "0.6rem 0 0.9rem" }} />
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gridAutoRows: "min-content", gap: "0.85rem", alignContent: "start", overflow: "auto" }}>
+          <div className="os-gallery-grid" style={{ display: "grid", gridTemplateColumns: narrow ? "1fr" : "1fr 1fr", gridAutoRows: "min-content", gap: narrow ? "0.5rem" : "0.85rem", alignContent: "start", overflow: "auto" }}>
             {page.images.map((img, slotIdx) => (
               <div key={slotIdx} style={{ display: "flex", flexDirection: "column", gap: "0.3rem" }}>
-                <label style={imgSlotStyle}>
+                <label className="os-img-slot" style={imgSlotStyle}>
                   {img.src ? (
                     <img src={img.src} alt="" style={{ width: "100%", height: "100%", objectFit: "cover", borderRadius: "6px" }} />
                   ) : (
@@ -445,7 +489,7 @@ export default function OurStory() {
     }
 
     return (
-      <div style={{ padding: "2.25rem", height: "100%", display: "flex", flexDirection: "column" }}>
+      <div className="os-page-text-pad" style={{ padding: narrow ? "1.1rem" : "2.25rem", height: "100%", display: "flex", flexDirection: "column" }}>
         {page.eyebrow && <p className="os-stamp-font" style={eyebrowStyle}>{page.eyebrow}</p>}
         {editMode ? (
           <input className="os-edit-input" aria-label="Page title" value={page.title} onChange={(e) => updatePage(idx, "title", e.target.value)}
@@ -455,9 +499,9 @@ export default function OurStory() {
         )}
         <div style={{ width: "2.25rem", height: "2px", background: C.gold, margin: "0.75rem 0 1.1rem" }} />
         {!editMode && page.heroEmoji && (
-          <div style={{ display: "inline-flex", alignItems: "center", justifyContent: "center", gap: "0.4rem", alignSelf: "flex-start", marginBottom: "0.75rem", padding: "0.45rem 0.75rem", borderRadius: "999px", border: "1px solid rgba(201,162,75,0.28)", background: "rgba(255,255,255,0.08)", color: C.inkSoft, fontSize: "1rem" }}>
+          <div className="os-emoji-tag" style={{ display: "inline-flex", alignItems: "center", justifyContent: "center", gap: narrow ? "0.2rem" : "0.4rem", alignSelf: "flex-start", marginBottom: narrow ? "0.4rem" : "0.75rem", padding: narrow ? "0.3rem 0.5rem" : "0.45rem 0.75rem", borderRadius: "999px", border: "1px solid rgba(201,162,75,0.28)", background: "rgba(255,255,255,0.08)", color: C.inkSoft, fontSize: narrow ? "0.75rem" : "1rem" }}>
             <span aria-hidden="true">{page.heroEmoji}</span>
-            <span style={{ fontFamily: "'EB Garamond', serif", fontSize: "0.82rem", fontWeight: 600 }}>for you</span>
+            <span style={{ fontFamily: "'EB Garamond', serif", fontSize: narrow ? "0.7rem" : "0.82rem", fontWeight: 600 }}>for you</span>
           </div>
         )}
         {editMode ? (
@@ -479,17 +523,40 @@ export default function OurStory() {
       <style>{FONTS}</style>
       <audio ref={audioRef} src={asset("audio/background.mp4")} loop preload="auto" />
 
+      {revealed && (
+        <button onClick={toggleAudio} aria-label={audioPlaying ? "Pause music" : "Play music"}
+          style={{
+            position: "fixed", bottom: "1.2rem", right: "1.2rem", zIndex: 999,
+            width: "2.8rem", height: "2.8rem", borderRadius: "50%",
+            background: `linear-gradient(135deg, ${C.gold}, ${C.goldDeep})`,
+            border: "none", boxShadow: "0 4px 12px rgba(0,0,0,0.4)",
+            display: "flex", alignItems: "center", justifyContent: "center",
+            cursor: "pointer", fontSize: "1.1rem", color: "#2a1e0a",
+          }}>
+          {audioPlaying ? (
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <rect x="6" y="4" width="4" height="16" />
+              <rect x="14" y="4" width="4" height="16" />
+            </svg>
+          ) : (
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <polygon points="5 3 19 12 5 21 5 3" />
+            </svg>
+          )}
+        </button>
+      )}
+
       {/* ---------------- Boarding-pass hero ---------------- */}
       <div style={ticketOuterStyle} className={`os-ticket-outer${!revealed ? " os-idle-float" : ""}`}>
         <div style={ticketMainStyle} className="os-ticket-main">
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "0.7rem" }}>
-            <span className="os-stamp-font" style={ticketKicker}>BOARDING PASS</span>
+            <span className="os-stamp-font os-ticket-kicker" style={ticketKicker}>BOARDING PASS</span>
             <PlaneTakeoff size={16} color={C.goldPale} />
           </div>
 
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "0.5rem" }}>
             <div style={{ flex: 1, minWidth: 0 }}>
-              <div className="os-stamp-font" style={ticketFieldLabel}>FROM</div>
+              <div className="os-stamp-font os-ticket-field-label" style={ticketFieldLabel}>FROM</div>
               {editMode ? (
                 <input className="os-ticket-edit os-display os-ticket-field-value" value={fromCity} onChange={(e) => setFromCity(e.target.value.toUpperCase())} style={{ ...ticketFieldValue, width: "100%" }} />
               ) : (
@@ -498,7 +565,7 @@ export default function OurStory() {
             </div>
             <PlaneLanding size={18} color={C.gold} style={{ flexShrink: 0 }} />
             <div style={{ flex: 1, minWidth: 0, textAlign: "right" }}>
-              <div className="os-stamp-font" style={ticketFieldLabel}>TO</div>
+              <div className="os-stamp-font os-ticket-field-label" style={ticketFieldLabel}>TO</div>
               {editMode ? (
                 <input className="os-ticket-edit os-display os-ticket-field-value" value={toCity} onChange={(e) => setToCity(e.target.value.toUpperCase())} style={{ ...ticketFieldValue, width: "100%", textAlign: "right" }} />
               ) : (
@@ -507,19 +574,19 @@ export default function OurStory() {
             </div>
           </div>
 
-          <div style={{ display: "flex", gap: "1.4rem", margin: "0.9rem 0 0.3rem" }}>
+          <div style={{ display: "flex", gap: narrow ? "0.8rem" : "1.4rem", margin: narrow ? "0.6rem 0 0.2rem" : "0.9rem 0 0.3rem" }}>
             <div>
-              <div className="os-stamp-font" style={ticketFieldLabel}>DEPART</div>
-              <div className="os-stamp-font" style={ticketSmallCode}>{fmtCode(arrival)}</div>
+              <div className="os-stamp-font os-ticket-field-label" style={ticketFieldLabel}>DEPART</div>
+              <div className="os-stamp-font os-ticket-small-code" style={ticketSmallCode}>{fmtCode(arrival)}</div>
             </div>
             <div>
-              <div className="os-stamp-font" style={ticketFieldLabel}>RETURN</div>
-              <div className="os-stamp-font" style={ticketSmallCode}>{fmtCode(departure)}</div>
+              <div className="os-stamp-font os-ticket-field-label" style={ticketFieldLabel}>RETURN</div>
+              <div className="os-stamp-font os-ticket-small-code" style={ticketSmallCode}>{fmtCode(departure)}</div>
             </div>
             <div style={{ marginLeft: "auto", textAlign: "right" }}>
-              <div className="os-stamp-font" style={ticketFieldLabel}>PASSENGER</div>
+              <div className="os-stamp-font os-ticket-field-label" style={ticketFieldLabel}>PASSENGER</div>
               {editMode ? (
-                <input className="os-ticket-edit os-stamp-font" value={couple} onChange={(e) => setCouple(e.target.value)} style={{ ...ticketSmallCode, textAlign: "right", width: "8.5rem" }} />
+                <input className="os-ticket-edit os-stamp-font os-passenger-input" value={couple} onChange={(e) => setCouple(e.target.value)} style={{ ...ticketSmallCode, textAlign: "right", width: "8.5rem" }} />
               ) : (
                 <div className="os-stamp-font" style={{ ...ticketSmallCode, textAlign: "right" }}>{couple}</div>
               )}
@@ -528,9 +595,9 @@ export default function OurStory() {
 
           <div style={{ marginTop: "1rem" }}>
             {countdown.arrived ? (
-              <p className="os-display os-stamp-in" style={{ color: C.goldPale, fontSize: "1.35rem", margin: 0, fontWeight: 600 }}>{arrivedMessage}</p>
+              <p className="os-display os-stamp-in" style={{ color: C.goldPale, fontSize: narrow ? "1.1rem" : "1.35rem", margin: 0, fontWeight: 600 }}>{arrivedMessage}</p>
             ) : (
-              <div style={{ display: "flex", justifyContent: "space-between" }}>
+              <div className="os-countdown-row" style={{ display: "flex", justifyContent: "space-between", gap: narrow ? "0.3rem" : "0" }}>
                 {[["DAYS", countdown.days], ["HRS", countdown.hours], ["MIN", countdown.minutes], ["SEC", countdown.seconds]].map(([label, val]) => (
                   <div key={label} style={{ textAlign: "center" }}>
                     <div className="os-display os-countdown-num" style={{ color: C.goldPale, fontSize: "1.55rem", fontVariantNumeric: "tabular-nums", fontWeight: 700 }}>{String(val).padStart(2, "0")}</div>
@@ -616,10 +683,10 @@ export default function OurStory() {
       {revealed && (
         <div style={{ width: "100%", maxWidth: "30rem", marginBottom: "2rem" }}>
           <p className="os-stamp-font" style={{ ...eyebrowStyle, color: C.gold, textAlign: "center" }}>PASSPORT · PRIOR STAMPS</p>
-          <h3 className="os-display" style={{ color: "#f7f0e1", textAlign: "center", margin: "0.2rem 0 1.1rem", fontSize: "1.3rem" }}>Our Adventures So Far</h3>
-          <div style={{ display: "flex", flexWrap: "wrap", justifyContent: "center", gap: "1rem", background: "rgba(255,255,255,0.04)", border: "1px dashed rgba(201,162,75,0.3)", borderRadius: "14px", padding: "1.4rem 1rem" }}>
+          <h3 className="os-display" style={{ color: "#f7f0e1", textAlign: "center", margin: "0.2rem 0 1.1rem", fontSize: narrow ? "1.1rem" : "1.3rem" }}>Our Adventures So Far</h3>
+          <div className="os-prevtrip-container" style={{ display: "flex", flexWrap: "wrap", justifyContent: "center", gap: narrow ? "0.6rem" : "1rem", background: "rgba(255,255,255,0.04)", border: "1px dashed rgba(201,162,75,0.3)", borderRadius: "14px", padding: narrow ? "0.8rem 0.6rem" : "1.4rem 1rem" }}>
             {prevTrips.map((img, i) => (
-              <label key={i} className="polaroid os-prevtrip-item" style={{ width: "6.5rem", transform: `rotate(${rotations[i]}deg)`, cursor: "pointer" }}>
+              <label key={i} className="polaroid os-prevtrip-item" style={{ width: narrow ? "4rem" : "6.5rem", transform: `rotate(${rotations[i]}deg)`, cursor: "pointer" }}>
                 <div style={{ width: "100%", aspectRatio: "1 / 1", background: "#e9e0c8", display: "flex", alignItems: "center", justifyContent: "center", borderRadius: "2px", overflow: "hidden" }}>
                   {img ? <img src={img} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} /> : <ImagePlus size={18} color="#b09a6b" />}
                 </div>
@@ -634,8 +701,8 @@ export default function OurStory() {
       {!revealed ? (
         <div className="os-book-outer" style={{ width: "100%", maxWidth: "26rem" }}>
           <div className="os-book-wrap" style={{ position: "relative", width: "100%", aspectRatio: "3 / 4" }}>
-            <div style={{ ...hardcoverPageStyle, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: "0.75rem", textAlign: "center", padding: "2rem" }}>
-              <div style={frameInsetStyle} />
+            <div style={{ ...hardcoverPageStyle, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: narrow ? "0.4rem" : "0.75rem", textAlign: "center", padding: narrow ? "1rem" : "2rem" }}>
+              <div className="os-frame-inset" style={frameInsetStyle} />
               {renderCoverOrnaments()}
               <Lock size={22} color={C.gold} style={{ position: "relative" }} />
               <p className="os-display" style={{ position: "relative", color: C.goldPale, fontSize: "1.05rem", margin: 0 }}>The story opens when you're together</p>
@@ -670,10 +737,10 @@ export default function OurStory() {
                 </div>
               </div>
 
-              <button className="os-navbtn os-navbtn-left" aria-label="Previous page" onClick={() => goTo("prev")} disabled={currentIndex === 0} style={{ ...navBtnStyle, left: "-2.6rem", opacity: currentIndex === 0 ? 0.25 : 1 }}>
+              <button className="os-navbtn os-navbtn-left" aria-label="Previous page" onClick={() => goTo("prev")} disabled={currentIndex === 0} style={{ ...navBtnStyle, left: narrow ? "-0.1rem" : "-2.6rem", opacity: currentIndex === 0 ? 0.25 : 1 }}>
                 <ChevronLeft color={C.goldPale} />
               </button>
-              <button className="os-navbtn os-navbtn-right" aria-label="Next page" onClick={() => goTo("next")} disabled={currentIndex === pageData.length - 1} style={{ ...navBtnStyle, right: "-2.6rem", opacity: currentIndex === pageData.length - 1 ? 0.25 : 1 }}>
+              <button className="os-navbtn os-navbtn-right" aria-label="Next page" onClick={() => goTo("next")} disabled={currentIndex === pageData.length - 1} style={{ ...navBtnStyle, right: narrow ? "-0.1rem" : "-2.6rem", opacity: currentIndex === pageData.length - 1 ? 0.25 : 1 }}>
                 <ChevronRight color={C.goldPale} />
               </button>
             </div>
@@ -726,8 +793,7 @@ const pageShadeStyle = {
 
 const frameInsetStyle = { position: "absolute", inset: "10px", border: "1px solid rgba(201,162,75,0.55)", borderRadius: "6px", pointerEvents: "none" };
 
-const goldCornerStyle = (corner) => {
-  const size = "26px";
+const goldCornerStyle = (corner, size = 26) => {
   const base = {
     position: "absolute", width: size, height: size,
     background: `linear-gradient(135deg, #f2d98a, ${C.gold} 40%, ${C.goldDeep})`,
